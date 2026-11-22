@@ -1,0 +1,24 @@
+# Cloud Build Trigger Configuration (Optional - for automated builds)
+# This configuration can be used when setting up triggers via gcloud CLI
+
+name: deploy-pubsub-dataflow-pipeline
+description: "Deploy Pub/Sub publisher and Dataflow pipeline"
+filename: cloudbuild.yaml
+
+# Trigger on push to main branch (if using Git)
+# github:
+#   owner: your-github-username
+#   name: your-repo-name
+#   push:
+#     branch: ^main$
+
+# Or trigger manually
+triggerTemplate:
+  projectId: your-project-id
+  repoName: your-repo-name
+  branchName: main
+
+# Substitutions (override cloudbuild.yaml defaults)
+substitutions:
+  _PROJECT_ID: "your-project-id"
+  _REGION: "us-central1"

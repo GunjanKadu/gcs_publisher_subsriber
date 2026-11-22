@@ -1,0 +1,14 @@
+# Ignore patterns for gcloud builds
+.gcloudignore
+.git
+.gitignore
+README.md
+*.sh
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/

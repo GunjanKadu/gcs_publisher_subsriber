@@ -1,0 +1,68 @@
+# Cloud Build Configuration
+# This file defines the build steps for deploying the pipeline
+
+substitutions:
+  _PROJECT_ID: "de2-bigquery"
+  _TOPIC_NAME: "data-ingestion-topic"
+  _SUBSCRIPTION_NAME: "data-ingestion-subscription"
+
+steps:
+  # Step 1: Create Pub/Sub topic (if doesn't exist)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    id: "create-topic"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Check if topic exists
+        if gcloud pubsub topics describe ${_TOPIC_NAME} &>/dev/null; then
+          echo "Topic ${_TOPIC_NAME} already exists"
+        else
+          echo "Creating topic ${_TOPIC_NAME}"
+          gcloud pubsub topics create ${_TOPIC_NAME}
+          echo "Topic created successfully"
+        fi
+
+  # Step 2: Create Pub/Sub subscription (if doesn't exist)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    id: "create-subscription"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Check if subscription exists
+        if gcloud pubsub subscriptions describe ${_SUBSCRIPTION_NAME} &>/dev/null; then
+          echo "Subscription ${_SUBSCRIPTION_NAME} already exists"
+        else
+          echo "Creating subscription ${_SUBSCRIPTION_NAME}"
+          gcloud pubsub subscriptions create ${_SUBSCRIPTION_NAME} \
+            --topic=${_TOPIC_NAME} \
+            --ack-deadline=60
+          echo "Subscription created successfully"
+        fi
+    waitFor: ["create-topic"]
+
+  # Step 3: Install dependencies for publisher
+  - name: "python:3.11"
+    id: "install-publisher-deps"
+    entrypoint: "pip"
+    args: ["install", "-r", "publisher/requirements.txt", "--user"]
+
+  # Step 3: Run the publisher to send dummy messages
+  - name: "python:3.11"
+    id: "publish-messages"
+    entrypoint: "python"
+    args: ["publisher/publish_messages.py"]
+    env:
+      - "GCP_PROJECT=${_PROJECT_ID}"
+      - "PUBSUB_TOPIC=${_TOPIC_NAME}"
+      - "NUM_MESSAGES=5"
+      - "DELAY_SECONDS=1"
+    waitFor: ["install-publisher-deps", "create-subscription"]
+
+# Timeout for the entire build
+timeout: "1800s"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: "N1_HIGHCPU_8"
