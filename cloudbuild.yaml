@@ -2,7 +2,7 @@
 # This file defines the build steps for deploying the pipeline
 
 substitutions:
-  _PROJECT_ID: "de2-bigquery"
+  _PROJECT_ID: "ccda-2026"
   _TOPIC_NAME: "data-ingestion-topic"
   _SUBSCRIPTION_NAME: "data-ingestion-subscription"
 
